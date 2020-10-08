@@ -316,3 +316,4 @@ $RECYCLE.BIN/
 # Project specific:
 ## The input comprises data that is easily available elsewhere
 input/*
+generated/*
