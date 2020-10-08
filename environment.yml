@@ -1,0 +1,10 @@
+name: card-detection
+channels:
+  - defaults
+dependencies:
+  - jupyter
+  - pandas
+  - matplotlib
+  - scikit-image
+  - imgaug
+  - shapely
