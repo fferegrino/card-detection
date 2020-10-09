@@ -283,7 +283,7 @@ scenes = Scenes(bg_images, scene_width=1280, scene_height=720)
     
 def generate_sample(example):
     cards_in_scene = random.randint(3, 7)
-    cards = random.sample(card_dataset, cards_in_scene)
+    cards = random.sample(all_available_cards, cards_in_scene)
     board, bounding_boxes, original_polys, overlapping_polys, keypoints = scenes.generate(cards)
 
     sample_id = f"{example:06}"

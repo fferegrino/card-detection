@@ -317,3 +317,4 @@ $RECYCLE.BIN/
 ## The input comprises data that is easily available elsewhere
 input/*
 generated/*
+transformed/*

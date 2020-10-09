@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "dcdcbfad320099469d5abc57d5dab864df184bc7e59d548190baf01a3d66d5f7"
+            "sha256": "2c07b3f0021ac71b9099d1586935aaba362abb219401707564db5c2035daadd4"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -670,6 +670,13 @@
                 "sha256:caba44724b994a8a5e086460bb212abc5a8bc46951bf4a9a1210745953622eb9"
             ],
             "version": "==0.7.1"
+        },
+        "pascal-voc-writer": {
+            "hashes": [
+                "sha256:5424d88873a7513da84825c8d07e865033c11c00f68270bc8b819a35b187ce3b"
+            ],
+            "index": "pypi",
+            "version": "==0.1.4"
         },
         "pickleshare": {
             "hashes": [
