@@ -12,9 +12,12 @@ jupyter = "*"
 matplotlib = "*"
 pandas = "*"
 pascal-voc-writer = "*"
+pycocotools = "*"
+pyyaml = "*"
 scikit-image = "*"
 shapely = "*"
 tensorflow = "*"
+tf-slim = "*"
 
 [requires]
 python_version = "3.7"

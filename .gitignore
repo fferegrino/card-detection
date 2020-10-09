@@ -315,6 +315,8 @@ $RECYCLE.BIN/
 
 # Project specific:
 ## The input comprises data that is easily available elsewhere
+exported-models/*
 input/*
 generated/*
 transformed/*
+training/*

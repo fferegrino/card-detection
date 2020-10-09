@@ -1,0 +1,54 @@
+item {
+  id: 1
+  name: 'effect_monster'
+}
+
+item {
+  id: 2
+  name: 'fusion_monster'
+}
+
+item {
+  id: 3
+  name: 'link_monster'
+}
+
+item {
+  id: 4
+  name: 'normal_monster'
+}
+
+item {
+  id: 5
+  name: 'pendulum_monster'
+}
+
+item {
+  id: 6
+  name: 'ritual_monster'
+}
+
+item {
+  id: 7
+  name: 'spell'
+}
+
+item {
+  id: 8
+  name: 'synchro_monster'
+}
+
+item {
+  id: 9
+  name: 'token'
+}
+
+item {
+  id: 10
+  name: 'trap'
+}
+
+item {
+  id: 11
+  name: 'xyz_monster'
+}
