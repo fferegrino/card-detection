@@ -21,69 +21,40 @@
 import os
 import cv2
 import numpy as np
-import tensorflow as tf
 import sys
 
-# This is needed since the notebook is stored in the object_detection folder.
-sys.path.append("..")
 
-# Import utilites
-from utils import label_map_util
-from utils import visualization_utils as vis_util
+import os
+import time
+import tensorflow as tf # Added as colab instance often crash
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as viz_utils
 
-# Name of the directory containing the object detection module we're using
-MODEL_NAME = 'inference_graph'
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
 
-# Grab path to current working directory
-CWD_PATH = os.getcwd()
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+session = InteractiveSession(config=config)
 
-# Path to frozen detection graph .pb file, which contains the model that is used
-# for object detection.
-PATH_TO_CKPT = os.path.join(CWD_PATH,MODEL_NAME,'frozen_inference_graph.pb')
+# Label Map path
+PATH_TO_LABELS = "label-map.pbtxt"
+# Saved model path
+PATH_TO_SAVED_MODEL = os.path.join("exported-models", "saved_model")
 
-# Path to label map file
-PATH_TO_LABELS = os.path.join(CWD_PATH,'training','labelmap.pbtxt')
+print('Loading model...', end='')
+start_time = time.time()
 
-# Number of classes the object detector can identify
-NUM_CLASSES = 6
+# Load saved model and build the detection function
+detect_fn = tf.saved_model.load(PATH_TO_SAVED_MODEL)
 
-## Load the label map.
-# Label maps map indices to category names, so that when our convolution
-# network predicts `5`, we know that this corresponds to `king`.
-# Here we use internal utility functions, but anything that returns a
-# dictionary mapping integers to appropriate string labels would be fine
-label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
-categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
-category_index = label_map_util.create_category_index(categories)
+end_time = time.time()
+elapsed_time = end_time - start_time
+print('Done! Took {} seconds'.format(elapsed_time))
 
-# Load the Tensorflow model into memory.
-detection_graph = tf.Graph()
-with detection_graph.as_default():
-    od_graph_def = tf.GraphDef()
-    with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
-        serialized_graph = fid.read()
-        od_graph_def.ParseFromString(serialized_graph)
-        tf.import_graph_def(od_graph_def, name='')
-
-    sess = tf.Session(graph=detection_graph)
-
-
-# Define input and output tensors (i.e. data) for the object detection classifier
-
-# Input tensor is the image
-image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
-
-# Output tensors are the detection boxes, scores, and classes
-# Each box represents a part of the image where a particular object was detected
-detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
-
-# Each score represents level of confidence for each of the objects.
-# The score is shown on the result image, together with the class label.
-detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
-detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
-
-# Number of objects detected
-num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+# Set category index
+category_index = label_map_util.create_category_index_from_labelmap(PATH_TO_LABELS,
+                                                                    use_display_name=True)
 
 # Initialize webcam feed
 video = cv2.VideoCapture(0)
@@ -96,24 +67,36 @@ while(True):
     # i.e. a single-column array, where each item in the column has the pixel RGB value
     ret, frame = video.read()
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame_expanded = np.expand_dims(frame_rgb, axis=0)
+    #frame_expanded = np.expand_dims(frame_rgb, axis=0)
+    input_tensor = tf.convert_to_tensor(frame_rgb)
+    
+    # The model expects a batch of images, so add an axis with `tf.newaxis`.
+    input_tensor = input_tensor[tf.newaxis, ...]
 
-    # Perform the actual detection by running the model with the image as input
-    (boxes, scores, classes, num) = sess.run(
-        [detection_boxes, detection_scores, detection_classes, num_detections],
-        feed_dict={image_tensor: frame_expanded})
+    # input_tensor = np.expand_dims(image_np, 0)
+    detections = detect_fn(input_tensor)
+    # All outputs are batches tensors.
+    # Convert to numpy arrays, and take index [0] to remove the batch dimension.
+    # We're only interested in the first num_detections.
+    num_detections = int(detections.pop('num_detections'))
+    detections = {key: value[0, :num_detections].numpy()
+                   for key, value in detections.items()}
+    detections['num_detections'] = num_detections
 
-    # Draw the results of the detection (aka 'visulaize the results')
-    vis_util.visualize_boxes_and_labels_on_image_array(
-        frame,
-        np.squeeze(boxes),
-        np.squeeze(classes).astype(np.int32),
-        np.squeeze(scores),
-        category_index,
-        use_normalized_coordinates=True,
-        line_thickness=8,
-        min_score_thresh=0.60)
+    # detection_classes should be ints.
+    detections['detection_classes'] = detections['detection_classes'].astype(np.int64)
 
+
+    viz_utils.visualize_boxes_and_labels_on_image_array(
+          frame,
+          detections['detection_boxes'],
+          detections['detection_classes'],
+          detections['detection_scores'],
+          category_index,
+          use_normalized_coordinates=True,
+          max_boxes_to_draw=20,
+          min_score_thresh=.50,
+          agnostic_mode=False)
     # All the results have been drawn on the frame, so it's time to display it.
     cv2.imshow('Object detector', frame)
 

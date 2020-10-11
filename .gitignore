@@ -320,3 +320,6 @@ input/*
 generated/*
 transformed/*
 training/*
+*.csv
+*.tfrecord
+models/*
