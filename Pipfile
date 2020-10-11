@@ -18,6 +18,7 @@ scikit-image = "*"
 shapely = "*"
 tensorflow = "*"
 tf-slim = "*"
+kaggle = "*"
 
 [requires]
 python_version = "3.7"
