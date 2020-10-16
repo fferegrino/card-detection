@@ -21,15 +21,13 @@ from object_detection.utils import dataset_util
 from collections import namedtuple, OrderedDict
 import argparse
 
-LABELS = ['effect_monster',
+LABELS = ['monster',
  'fusion_monster',
  'link_monster',
- 'normal_monster',
  'pendulum_monster',
  'ritual_monster',
  'spell',
  'synchro_monster',
- 'token',
  'trap',
  'xyz_monster']
 

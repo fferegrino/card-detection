@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# # Yu-Gi-Oh! Card Recogniser Scene Generation
+
+# In[1]:
 
 
 import matplotlib.pyplot as plt
@@ -22,63 +24,79 @@ from shapely.geometry import Polygon, Point
 from shapely.geometry.multipolygon import MultiPolygon
 
 
+# In[2]:
 
+
+np.random.seed(42)
+random.seed(42)
+
+
+# ## Download the datasets  
+# 
+#  - [Yu-Gi-Oh! Cards](https://www.kaggle.com/ioexception/yugioh-cards) from Kaggle.  
+#     - `kaggle datasets download -d ioexception/yugioh-cards -p input/yugioh-cards --unzip`
+#  - [Describable Textures Dataset (DTD)](https://www.robots.ox.ac.uk/~vgg/data/dtd/index.html) from https://www.robots.ox.ac.uk/
+#     - `wget -O input/dtd-r1.0.1.tar.gz https://www.robots.ox.ac.uk/~vgg/data/dtd/download/dtd-r1.0.1.tar.gz`
+#     - `tar xvfz input/dtd-r1.0.1.tar.gz --directory input`
+#     - `rm input/dtd-r1.0.1.tar.gz`
 
 # ## Read the cards dataset
 
-# In[ ]:
+# In[3]:
 
 
 card_dataset = CardDataset("input/yugioh-cards/")
 
 
-# In[ ]:
+# In[4]:
 
 
 card = random.sample(card_dataset,1)[0]
 card
 
 
-# In[ ]:
+# In[5]:
 
 
 plt.imshow(card.image())
 
 
-# In[ ]:
+# In[6]:
 
 
-card_type_map = {'Effect Monster': "effect_monster",
- 'Flip Effect Monster': "effect_monster",
- 'Fusion Monster': "fusion_monster",
- 'Gemini Monster': "effect_monster",
- 'Link Monster': "link_monster",
- 'Normal Monster': "normal_monster",
- 'Normal Tuner Monster': "normal_monster",
- 'Pendulum Effect Fusion Monster': "pendulum_monster",
- 'Pendulum Effect Monster': "pendulum_monster",
- 'Pendulum Flip Effect Monster': "pendulum_monster",
- 'Pendulum Normal Monster': "pendulum_monster",
- 'Pendulum Tuner Effect Monster': "pendulum_monster",
- 'Ritual Effect Monster': "ritual_monster",
- 'Ritual Monster': "ritual_monster",
- 'Skill Card': "skill",
- 'Spell Card': "spell",
- 'Spirit Monster': "effect_monster",
- 'Synchro Monster': "synchro_monster",
- 'Synchro Pendulum Effect Monster': "pendulum_monster",
- 'Synchro Tuner Monster': "synchro_monster",
- 'Token': "token",
- 'Toon Monster': "effect_monster",
- 'Trap Card': "trap",
- 'Tuner Monster': "normal_monster",
- 'Union Effect Monster': "effect_monster",
- 'XYZ Monster': "xyz_monster",
- 'XYZ Pendulum Effect Monster': "pendulum_monster"}
+card_type_map = {
+    'Effect Monster': "monster",
+    'Flip Effect Monster': "monster",
+    'Fusion Monster': "fusion_monster",
+    'Gemini Monster': "monster",
+    'Link Monster': "link_monster",
+    'Normal Monster': "monster",
+    'Normal Tuner Monster': "monster",
+    'Pendulum Effect Fusion Monster': "pendulum_monster",
+    'Pendulum Effect Monster': "pendulum_monster",
+    'Pendulum Flip Effect Monster': "pendulum_monster",
+    'Pendulum Normal Monster': "pendulum_monster",
+    'Pendulum Tuner Effect Monster': "pendulum_monster",
+    'Ritual Effect Monster': "ritual_monster",
+    'Ritual Monster': "ritual_monster",
+    #'Skill Card': "skill",
+    'Spell Card': "spell",
+    'Spirit Monster': "monster",
+    'Synchro Monster': "synchro_monster",
+    'Synchro Pendulum Effect Monster': "pendulum_monster",
+    'Synchro Tuner Monster': "synchro_monster",
+    #'Token': "token",
+    'Toon Monster': "monster",
+    'Trap Card': "trap",
+    'Tuner Monster': "monster",
+    'Union Effect Monster': "monster",
+    'XYZ Monster': "xyz_monster",
+    'XYZ Pendulum Effect Monster': "pendulum_monster"
+}
 
 all_available_cards, classes = [], []
 for card in card_dataset:
-    if card.type == "Skill Card":
+    if card.type not in card_type_map:
         continue
     card.type = card_type_map[card.type]
     classes.append(card.type)
@@ -86,7 +104,7 @@ for card in card_dataset:
     
 
 
-# In[ ]:
+# In[7]:
 
 
 import imblearn
@@ -94,61 +112,78 @@ from collections import Counter
 
 original_values = Counter(classes)
 
-def over_sample(value):
+def oversample(value):
     return {
         class_:max(value, 600) for class_, value in original_values.items()
     }
+def undersample(value):
+    return {
+        class_:min(value, 3500) for class_, value in original_values.items()
+    }
 
-ros = imblearn.over_sampling.RandomOverSampler(sampling_strategy=over_sample)
+
+rus = imblearn.under_sampling.RandomUnderSampler(sampling_strategy=undersample)
+ros = imblearn.over_sampling.RandomOverSampler(sampling_strategy=oversample)
 all_available_cards, b = ros.fit_resample(np.array(all_available_cards).reshape(len(all_available_cards), -1), classes)
+all_available_cards, b = rus.fit_resample(all_available_cards, b)
 all_available_cards = all_available_cards.squeeze().tolist()
+most_common = Counter(b).most_common()
+print(most_common)
+print(len(most_common))
 
 
 # ## Read the backgrounds
 
-# In[ ]:
+# In[8]:
 
 
-dtd_dir="input/dtd-r1.0.1/"
+dtd_dir="input/dtd/"
 background_paths = list(Path(dtd_dir).glob("**/*.jpg"))
 bg_images=[]
-for image_path in random.sample(background_paths, 1000):
+for image_path in random.sample(background_paths, 5000):
     bg_images.append(io.imread(image_path))
 
 
-# In[ ]:
+# In[9]:
 
 
 SCALE_CARDS = 0.4
 
 image_transformations = iaa.Sequential([
-    iaa.Multiply((0.7, 1.5)), 
-    iaa.AddElementwise((-30, 30), per_channel=0.5),
+    iaa.Multiply((0.8, 1.3)),
+    iaa.Sometimes(0.5, 
+                  iaa.GammaContrast((0.6, 1.5), per_channel=True),
+                  iaa.Multiply((0.5, 1.5),per_channel=0.5), 
+                 ),
+    iaa.AddElementwise((-20, 20), per_channel=0.5),
 ])
 
 spatial_transformations = iaa.Sequential([
-    iaa.Multiply((0.5, 1.5)), # change brightness, doesn't affect keypoints
+    
     iaa.Affine(
         scale=SCALE_CARDS,
-        translate_percent={"x": (-0.4, 0.4), "y": (-0.4, 0.4)},
+        translate_percent={"x": (-0.01, 0.01), "y": (-0.01, 0.01)},
         rotate=(-90, 90),
     ),
 ])
 
+deep_fry_whole = iaa.Sometimes(0.5,iaa.Sequential([
+    iaa.AddElementwise((-10, 10), per_channel=0.5),
+      iaa.Multiply((0.7, 1),per_channel=0.5), 
+]))
+
+# plt.imshow(image_transformations(image=all_available_cards[100].image()))
+
+
+# In[10]:
+
+
 class Scenes:
     
-    def __init__(self, backgrounds, scene_width, scene_height, card_shape = (614, 421, 3)):
+    def __init__(self, backgrounds, scene_width, scene_height, card_shape = (614, 421, 3), grid = (4, 7), card_padding=20):
         self.backgrounds = backgrounds
         self.scene_width = scene_width
         self.scene_height = scene_height
-        
-        aux_w = scene_width - card_shape[1]
-        self.card_w_padding = [aux_w // 2] * 2
-        self.card_w_padding[1] += aux_w % 2
-        
-        aux_w = scene_height - card_shape[0]
-        self.card_h_padding = [aux_w // 2] * 2
-        self.card_h_padding[1] += aux_w % 2
         
         self.card_key_points = ia.KeypointsOnImage([
             ia.Keypoint(x=0, y= 0),
@@ -158,6 +193,24 @@ class Scenes:
         ], shape=card_shape)
         
         self.scene_poly = Polygon(((0., 0.), (0., scene_height), (scene_width, scene_height), (scene_width, 0.), (0., 0.)))
+        
+        self.card_padding =  card_padding
+        
+        aux_w = scene_width - card_shape[1]
+        self.card_w_padding = [aux_w // 2] * 2
+        self.card_w_padding[1] += aux_w % 2
+        
+        aux_w = scene_height - card_shape[0]
+        self.card_h_padding = [aux_w // 2] * 2
+        self.card_h_padding[1] += aux_w % 2
+        
+        # Generate grid
+        hs = np.linspace(100, scene_height-100, grid[0]+1).astype(int)
+        vs = np.linspace(100, scene_width-100, grid[1]+1).astype(int)
+        center_x = (vs[1:] + vs[:-1]) // 2 - scene_width // 2
+        center_y = (hs[1:] + hs[:-1]) // 2 - scene_height // 2
+        self.grid = list(np.transpose([np.tile(center_x, len(center_y)), np.repeat(center_y, len(center_x))]) )
+        
                 
     def _generate_random_background(self):
         selected_bg = random.choice(self.backgrounds)
@@ -201,6 +254,9 @@ class Scenes:
         transformed_img, transformed_kps = spatial_transformations(image=transformed_img, keypoints=kps)
         return transformed_img[:self.scene_height,:self.scene_width,:], transformed_kps
     
+    def move_card_to(self, card, kps, xy):
+        return np.roll(card, (xy[1], xy[0]),(0,1)), kps.shift(*xy)
+    
     def resolve_overlaps(self, modified_polys, current_poly):
          for idx, old_poly in enumerate(modified_polys):
             if old_poly.overlaps(current_poly):
@@ -215,21 +271,24 @@ class Scenes:
         original_polys = []
         modified_polys = []
         bounding_boxes = []
-        for card in cards:
-            card_image, keypoints = self.augment_card(card.image())
+        sample_positions = random.sample(self.grid, len(cards))
+        for position, card in zip(sample_positions, cards):
+            
             try:
-                full_image = np.where(card_image, card_image, full_image)
+                card_image, keypoints = self.augment_card(card.image())
+                card_image, keypoints = self.move_card_to(card_image, keypoints, position)
+                current_poly = Scenes.kps_to_polygon(keypoints)
+            
+                full_image = deep_fry_whole(image= np.where(card_image, card_image, full_image))
             except:
                 continue
-
-            current_poly = Scenes.kps_to_polygon(keypoints)
-            
             self.resolve_overlaps(modified_polys, current_poly)
             
             keypoint_list.append(keypoints)
             original_polys.append(current_poly.intersection(self.scene_poly))
             modified_polys.append(current_poly.intersection(self.scene_poly))
             bounding_boxes.append(self.kps_to_bounding(keypoints))
+            
             
         return (
             full_image,
@@ -241,11 +300,11 @@ class Scenes:
             
 
 
-# In[ ]:
+# In[11]:
 
 
 # scenes = Scenes(bg_images, scene_width=1280, scene_height=720) 
-# cards = random.sample(all_available_cards,6)
+# cards = random.sample(all_available_cards,3)
 # board, bounding_boxes, polys, mod, keypoints = scenes.generate(cards)
 # 
 # fig = plt.figure(dpi=300)
@@ -262,11 +321,11 @@ class Scenes:
 #     rects.append(rect)
 # 
 # pc = PatchCollection(rects, match_original=True)
-# 
+# ax.set_aspect('equal')
 # ax.add_collection(pc)
 
 
-# In[ ]:
+# In[13]:
 
 
 generated_datasets_path = Path("generated")
@@ -282,7 +341,7 @@ for folder in [images_folder, bounding_boxes_folder, original_polys_folder, over
 scenes = Scenes(bg_images, scene_width=1280, scene_height=720)    
     
 def generate_sample(example):
-    cards_in_scene = random.randint(3, 7)
+    cards_in_scene = random.randint(3, 10)
     cards = random.sample(all_available_cards, cards_in_scene)
     board, bounding_boxes, original_polys, overlapping_polys, keypoints = scenes.generate(cards)
 
@@ -315,66 +374,51 @@ def generate_sample(example):
 
             writable.write("\n")
 
-    # Write original polys in custom format
-    # <class> <area> x: <series_of_points,> y: <series_of_points,> 
-    with open(Path(generated_datasets_path, original_polys_folder, f"{sample_id}.txt"), "w") as writable:
-        for card, poly in zip(cards, original_polys):
-            writable.write(f"{card.type} ")
-            writable.write(f"{poly.area:.04f} ")
-
-
-            xs, ys = poly.exterior.xy
-            writable.write(f"x ")
-            writable.write(" ".join([f"{x:.04f}" for x in xs]))
-            writable.write(f" y ")
-            writable.write(" ".join([f"{y:.04f}" for y in ys]))
-
-            writable.write("\n")
-
-    # Write keypoints in custom format
-    # <class> <(x, y),> 
-    with open(Path(generated_datasets_path, keypoints_folder, f"{sample_id}.txt"), "w") as writable:
-        for card, kp in zip(cards, keypoints):
-            writable.write(f"{card.type} ")
-            keypoints_str = " ".join([
-                f"({kps.x:.04f},  {kps.y:.04f})"
-                for kps 
-                in kp
-            ])
-            writable.write(keypoints_str)
-
-            writable.write("\n")
+#    # Write original polys in custom format
+#    # <class> <area> x: <series_of_points,> y: <series_of_points,> 
+#    with open(Path(generated_datasets_path, original_polys_folder, f"{sample_id}.txt"), "w") as writable:
+#        for card, poly in zip(cards, original_polys):
+#            writable.write(f"{card.type} ")
+#            writable.write(f"{poly.area:.04f} ")
+#
+#
+#            xs, ys = poly.exterior.xy
+#            writable.write(f"x ")
+#            writable.write(" ".join([f"{x:.04f}" for x in xs]))
+#            writable.write(f" y ")
+#            writable.write(" ".join([f"{y:.04f}" for y in ys]))
+#
+#            writable.write("\n")
+#
+#    # Write keypoints in custom format
+#    # <class> <(x, y),> 
+#    with open(Path(generated_datasets_path, keypoints_folder, f"{sample_id}.txt"), "w") as writable:
+#        for card, kp in zip(cards, keypoints):
+#            writable.write(f"{card.type} ")
+#            keypoints_str = " ".join([
+#                f"({kps.x:.04f},  {kps.y:.04f})"
+#                for kps 
+#                in kp
+#            ])
+#            writable.write(keypoints_str)
+#
+#            writable.write("\n")
 
 
 # In[ ]:
 
-
-# get_ipython().run_line_magic('timeit', 'generate_sample(0)')
-
-
-# In[1]:
-
-
-# Multiprocessing does not work on Jupyter under Windows, so... 
-# we just don't do anything if running in Windows
 
 import time
 import os
 from joblib import Parallel, delayed
 
 t0 = time.time()
-
-Parallel(n_jobs=12, prefer="threads")(delayed(generate_sample)(example_id) for example_id in range(50_000))
+print("starting dataset generation")
+Parallel(n_jobs=12, prefer="threads")(delayed(generate_sample)(args) for args in range(50_000))
 
 t1 = time.time()
 
 print(t1-t0)
-
-
-# In[ ]:
-
-
-from multiprocessing import Pool
 
 
 # In[ ]:

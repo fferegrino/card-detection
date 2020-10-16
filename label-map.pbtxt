@@ -1,6 +1,6 @@
 item {
   id: 1
-  name: 'effect_monster'
+  name: 'monster'
 }
 
 item {
@@ -15,40 +15,31 @@ item {
 
 item {
   id: 4
-  name: 'normal_monster'
-}
-
-item {
-  id: 5
   name: 'pendulum_monster'
 }
 
 item {
-  id: 6
+  id: 5
   name: 'ritual_monster'
 }
 
 item {
-  id: 7
+  id: 6
   name: 'spell'
 }
 
 item {
-  id: 8
+  id: 7
   name: 'synchro_monster'
 }
 
 item {
-  id: 9
-  name: 'token'
-}
-
-item {
-  id: 10
+  id: 8
   name: 'trap'
 }
 
 item {
-  id: 11
+  id: 9
   name: 'xyz_monster'
 }
+  
