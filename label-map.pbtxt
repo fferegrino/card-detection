@@ -5,41 +5,20 @@ item {
 
 item {
   id: 2
-  name: 'fusion_monster'
+  name: 'spell_link_ritual'
 }
 
 item {
   id: 3
-  name: 'link_monster'
+  name: 'trap_fusion'
 }
 
 item {
   id: 4
-  name: 'pendulum_monster'
-}
-
-item {
-  id: 5
-  name: 'ritual_monster'
-}
-
-item {
-  id: 6
-  name: 'spell'
-}
-
-item {
-  id: 7
   name: 'synchro_monster'
 }
 
 item {
-  id: 8
-  name: 'trap'
-}
-
-item {
-  id: 9
+  id: 5
   name: 'xyz_monster'
 }
-  

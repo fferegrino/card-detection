@@ -22,18 +22,14 @@ from collections import namedtuple, OrderedDict
 import argparse
 
 LABELS = ['monster',
- 'fusion_monster',
- 'link_monster',
- 'pendulum_monster',
- 'ritual_monster',
- 'spell',
+ 'spell_link_ritual',
+ 'trap_fusion',
  'synchro_monster',
- 'trap',
  'xyz_monster']
 
 # TO-DO replace this with label map
 def class_text_to_int(row_label):
-    return LABELS.index(row_label)
+    return LABELS.index(row_label) + 1
 
 
 def split(df, group):

@@ -61,6 +61,11 @@ video = cv2.VideoCapture(0)
 ret = video.set(3,1280)
 ret = video.set(4,720)
 
+width= int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+height= int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+writer= cv2.VideoWriter('basicvideo.mp4', cv2.VideoWriter_fourcc(*'DIVX'), 20, (width,height))
+
 while(True):
 
     # Acquire frame and expand frame dimensions to have shape: [1, None, None, 3]
@@ -100,10 +105,14 @@ while(True):
     # All the results have been drawn on the frame, so it's time to display it.
     cv2.imshow('Object detector', frame)
 
+
+    writer.write(frame)
+
     # Press 'q' to quit
     if cv2.waitKey(1) == ord('q'):
         break
 
 # Clean up
 video.release()
+writer.release()
 cv2.destroyAllWindows()
